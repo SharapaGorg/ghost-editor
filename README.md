@@ -24,20 +24,17 @@ Ask for them by name. Each one is a full recipe in `recipes/` with its own guide
 **Clean OS** · *"edit this in Clean OS"*
 An Apple-ad talking head that lives inside your phone: calm word cards that sharpen out of a blur, wide and tight shots from one 4K camera, and an iPhone scene for each thing you name (a date picker, lock-screen notifications, a search with a loading bar stuck at 97%, a Photos memory). A red Figma selection box strikes out the words you reject.
 
-[![Clean OS](docs/img/clean-os.jpg)](https://github.com/kurbaitaev/ghost-editor/releases/download/v0.2.0/clean-os-demo.mp4)
-[▶ Watch the Clean OS demo](https://github.com/kurbaitaev/ghost-editor/releases/download/v0.2.0/clean-os-demo.mp4)
+https://github.com/user-attachments/assets/67ac007e-f175-4111-b75d-efbc205072bc
 
 **Vector explainer** · *"make an animated explainer"*
 No camera needed. A narrator (ElevenLabs) tells the story while a world draws itself: one continuous illustration the camera travels through, serif headlines, words that rise as they're spoken.
 
-[![Vector explainer](docs/img/vector-explainer.jpg)](https://github.com/kurbaitaev/ghost-editor/releases/download/v0.2.0/vector-explainer-demo.mp4)
-[▶ Watch the explainer demo](https://github.com/kurbaitaev/ghost-editor/releases/download/v0.2.0/vector-explainer-demo.mp4)
+https://github.com/user-attachments/assets/9d4208d6-a9eb-400f-8a8d-c3b1fbe5dfb9
 
 **RESULT** · *"edit this in RESULT style"*
 A warm podcast-style edit: one or two words at a time with a big emphasis word, handwritten key words, navy cards with film dust, polaroids, a paper stack that swaps pictures stop-motion, film-burn light leaks and a few comic props.
 
-[![RESULT](docs/img/result-podcast.jpg)](https://github.com/kurbaitaev/ghost-editor/releases/download/v0.2.0/result-demo.mp4)
-[▶ Watch the RESULT demo](https://github.com/kurbaitaev/ghost-editor/releases/download/v0.2.0/result-demo.mp4)
+https://github.com/user-attachments/assets/4f83f323-2cd9-4600-abf7-5613653d5952
 
 **POV montage** · *"cut these POV clips into a reel"*
 Clips from smart glasses or a GoPro cut into a story: a flash-forward hook, speed-ups, text behind you, a fact card a cursor clicks, and a freeze frame with a record scratch on the moment that matters.
