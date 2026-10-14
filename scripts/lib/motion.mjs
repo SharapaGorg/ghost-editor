@@ -13,7 +13,11 @@
 //   image     a still (e.g. AI B-roll) with a slow push; captions stay on
 //   sentence  kinetic sentence: words ink in as they are spoken, then a big
 //             accent hero word lands and a "not X" line gets a hand-drawn X
+//   word      1-3 words centred on the scene background, resolving from blur
+// Any scene's bg may be a Paper Shaders look: {"look": "ink-warp"} or a raw
+// {"shader": "warp", "preset": "Passion", "params": {...}} (lib/shader-layer.mjs).
 import { spawnSync } from "node:child_process";
+import { sceneShaderBg, wordSceneBody } from "./shader-layer.mjs";
 
 // Transitions in/out: blur (0.2 s dissolve through blur), expand (rounded
 // panel grows from the centre), wipe (left to right), cut.
@@ -118,6 +122,16 @@ export function buildScene(b, id, t0, t1, ctx) {
   const bg = b.bg === "accent" ? `linear-gradient(135deg, ${brand.accentDark} 0%, ${brand.accent} 55%, ${brand.accentDark} 100%)` : (b.bg || "#fff");
   const inKind = b.in ?? "blur", outKind = b.out ?? "blur";
   let customBg = null;
+  // Paper shader background: {"look": "..."} or {"shader": "...", preset, params, speed}
+  if (b.bg && typeof b.bg === "object" && b.bg.look === "fluted-self" && !b.bg.params?.image && ctx.stillAt)
+    b.bg = { ...b.bg, params: { ...(b.bg.params || {}), image: ctx.stillAt(t0, `${sid}-still`) } };
+  const shaderBg = sceneShaderBg(b.bg, sid);
+  if (shaderBg) {
+    ctx.usesShaders = true;
+    customBg = "#000";
+    const tw = shaderBg.tweenFor(t0, t1); // static filters (fluted-self) move through a param tween
+    if (tw) tl.push(tw);
+  }
 
   if (b.kind === "card") {
     const lines = (b.lines || []).map((l, i) => {
@@ -314,12 +328,16 @@ export function buildScene(b, id, t0, t1, ctx) {
     customBg = kbg;
   }
 
+  else if (b.kind === "word") {
+    body = wordSceneBody(b, sid, t0, ctx, shaderBg);
+  }
+
   else throw new Error(`unknown scene kind '${b.kind}'`);
 
   transIn(ctx, `#${sid}`, inKind, t0);
   if (inKind === "expand" || inKind === "wipe") addSfx(t0, "whoosh", `scene in (${inKind})`);
   transOut(ctx, `#${sid}`, outKind, t1);
-  return `<div id="${sid}" class="scene" style="background:${customBg ?? bg};background-size:220% 220%">${body}</div>`;
+  return `<div id="${sid}" class="scene" style="background:${customBg ?? bg};background-size:220% 220%">${shaderBg ? shaderBg.html : ""}${body}</div>`;
 }
 
 // editorial captions ------------------------------------------------------------

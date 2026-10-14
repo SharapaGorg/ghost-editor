@@ -2,7 +2,7 @@
 
 Call it with: **"make an animated explainer"**, **"like the tree video"**, **"faceless explainer with a wise voice"**.
 
-First made for "Two Directions" (a tree grows down and up; life lesson), Sep 2026: ~/EXPERIMENTS/reel-tree-roots.
+First made for "Two Directions" (a tree grows down and up; life lesson), Sep 2026: the worked example in example/.
 
 **When to use:** a script or idea with no footage, especially a metaphor or a concept that can be *drawn*:
 a process, a contrast (above/below, before/after), a growth story. Parables, life lessons, science explainers.
@@ -30,7 +30,7 @@ a process, a contrast (above/below, before/after), a growth story. Parables, lif
 ## Pipeline
 
 ```bash
-S=~/.claude/skills/ghost-editor; P=~/EXPERIMENTS/<name>
+S=~/.claude/skills/ghost-editor; P=~/reels/<name>
 # 1. tighten the script (~115 words ≈ 60 s at an elder's pace); fact-check it; write "..." where the voice should breathe
 # 2. voiceover with word timings (2 takes, pick by ear)
 python3 $S/scripts/tts_elevenlabs.py $P/voice/script.txt --voice NOpBlnGInO9m6vDvFkFC --out $P/voice --takes 2

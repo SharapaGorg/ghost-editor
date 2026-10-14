@@ -63,4 +63,4 @@ The tree is drawn live as SVG strokes: branches grow up, roots grow down, both o
 2. Word timestamps (whisper) → scene timing
 3. HyperFrames composition: SVG tree (branches/roots as stroke-draw paths), camera moves, kinetic serif type, captions
 4. Snapshot every beat → review → render 1080x1920 → loudness/true-peak QA
-5. Deliver MP4 + editable project in ~/EXPERIMENTS/reel-tree-roots/
+5. Deliver MP4 + editable project in the project folder (e.g. ~/reels/tree-roots/)

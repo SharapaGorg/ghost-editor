@@ -1,9 +1,8 @@
 # RESULT: a warm podcast-style edit with paper, film and handwriting
 
-Call it with: **"edit this in RESULT style"**, **"like the millennials reel"**, **"loompixual style"**.
+Call it with: **"edit this in RESULT style"**, **"loompixual style"**.
 
-First made for «Почему миллениалы ностальгируют» (Oct 2026): ~/EXPERIMENTS/reel-c008. The look comes from @loompixual's
-"RESULT" edit (IG DZr7QYDTwQG). Libraries and licences behind it: STYLE-LIBRARIES.md in this folder.
+The look comes from @loompixual's "RESULT" edit. Libraries and licences behind it: STYLE-LIBRARIES.md in this folder.
 
 **When to use:** storytelling or nostalgic talking heads, podcast-style monologues, lists of memories or examples where a photo per
 idea helps. Warmer and more tactile than Clean OS.
@@ -22,20 +21,23 @@ idea helps. Warmer and more tactile than Clean OS.
 ## Pipeline
 
 ```bash
-S=~/.claude/skills/ghost-editor; P=~/EXPERIMENTS/<name>
+S=~/.claude/skills/ghost-editor; P=~/reels/<name>
 # 1. attempt log: Gemini 2.5 Pro over the WHOLE raw take (every attempt, restart and filler, verbatim)
 # 2. takes: best take per line, cut only pauses > 0.7 s inside a line, start each line at the voice onset (RMS > -30 dB, no breaths)
-cp $S/recipes/result-podcast/example/{takes.py,build.py,gen_broll.sh} $P/ && cd $P && python3 takes.py      # -> build/takes.json
+#    write $P/takes.py (-> build/takes.json) and $P/build.py from SYSTEM.md and the catalog (the public edition ships no
+#    worked example for this recipe yet; every beat is keyed to the spoken words)
+cd $P && python3 takes.py      # -> build/takes.json
 # 3. render a rough cut, transcribe it (build/rough.words.json), audit it verbatim with Gemini 2.5 Pro; fix and re-audit until clean
-# 4. B-roll stills / photos for the polaroids and stack (gen_broll.sh), then adapt build.py's beats to the new script
+# 4. B-roll stills / photos for the polaroids and stack (AI stills: $S/scripts/broll_gen.py "<prompt>" assets/broll/<id>.png --aspect 4:5),
+#    then key build.py's beats to the new script
 python3 build.py && npx hyperframes lint && npx hyperframes snapshot --at <every beat>
 npx hyperframes render -o renders/<name>.mp4
 ```
 
 ## Checks that caught real problems
 
-- Whisper merges restarts ("Миллениалы веч- миллениалы") into a clean sentence and can even invent the script word that was never
-  said ("контентом"). The take picker left 6 restarts in until two Gemini 2.5 Pro audits found them all.
+- Whisper merges restarts ("millennials alw- millennials") into a clean sentence and can even invent a script word that was never
+  said. The take picker left 6 restarts in until two Gemini 2.5 Pro audits found them all.
 - Hide each caption with an explicit `fromTo` placed AFTER its fade-in; a bare `set` inside the fade gets overridden and the caption
   stays on screen.
 - Seed the per-frame dust/grain canvas by frame number, never by wall-clock time, or renders won't match previews.
