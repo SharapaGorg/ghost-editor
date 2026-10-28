@@ -136,7 +136,7 @@ def cmd_apply(a):
     lut = tempfile.NamedTemporaryFile(suffix=".cube", delete=False).name
     G.write_cube(lut, p, tr)
     matrix = ":in_color_matrix=bt2020" if G.is_hdr(info) else ""
-    vf = (f"scale=flags={G.SCALE_FLAGS}{matrix},format=rgb48le,lut3d=file={lut}:interp=tetrahedral,"
+    vf = (f"scale=flags={G.SCALE_FLAGS}{matrix},format=rgb48le,lut3d=file='{G.filter_path(lut)}':interp=tetrahedral,"
           f"scale=out_color_matrix=bt709:out_range=tv:flags={G.SCALE_FLAGS},format=yuv420p,"
           f"setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709:range=tv")
     g = max(1, int(round(info["fps"])))

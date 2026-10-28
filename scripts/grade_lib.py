@@ -269,7 +269,7 @@ SCALE_FLAGS = "accurate_rnd+full_chroma_int"
 STILL_EXT = lambda p: os.path.splitext(p)[1].lower() in (".jpg", ".jpeg", ".png", ".webp")
 
 OWN_ROOTS = [os.path.expanduser(r) for r in ("~/Pictures/Photos Library.photoslibrary", "~/Movies",
-                                             "~/Library/CloudStorage")]
+                                             "~/Library/CloudStorage", "~/Videos", "~/Pictures")]  # the last two: Windows / Linux
 
 
 def guess_kind(path):
@@ -321,6 +321,11 @@ def plate_stats(path, n=12, cache=True):
     return st
 
 
+def filter_path(p):
+    """Escape a file path for an ffmpeg filter argument (a Windows drive colon would end the option)."""
+    return str(p).replace("\\", "/").replace(":", "\\:").replace("'", "\\'").replace(",", "\\,")
+
+
 def sdr_vf(src, cube):
     """ffmpeg filter prefix that tone-maps an HDR (HLG/PQ BT.2020) source to SDR BT.709 RGB->YUV through a LUT; '' for SDR"""
     info = probe(src)
@@ -328,7 +333,7 @@ def sdr_vf(src, cube):
     if not tr:
         return ""
     write_cube(cube, dict(IDENT), tr)
-    return (f"scale=in_color_matrix=bt2020:flags={SCALE_FLAGS},format=rgb48le,lut3d=file={cube}:interp=tetrahedral,"
+    return (f"scale=in_color_matrix=bt2020:flags={SCALE_FLAGS},format=rgb48le,lut3d=file='{filter_path(cube)}':interp=tetrahedral,"
             f"scale=out_color_matrix=bt709:out_range=tv:flags={SCALE_FLAGS},format=yuv420p,"
             f"setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709:range=tv")   # frame tags win over -color_trc
 

@@ -32,6 +32,10 @@ import numpy as np
 SR = 48000
 
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+from plat import npx  # noqa: E402
+
+
 def sh(cmd):
     return subprocess.run(cmd, capture_output=True, text=True)
 
@@ -56,7 +60,7 @@ def render_sfx_stem(project):
     open(os.path.join(td, "index.html"), "w").write(html)
     out = os.path.abspath(os.path.join(project, "build", "sfx_stem.mp4"))
     print("rendering the SFX-only stem for the level check...")
-    r = subprocess.run(["npx", "hyperframes", "render", "-o", out, "--quiet"], cwd=td, capture_output=True, text=True)
+    r = subprocess.run(npx("hyperframes", "render", "-o", out, "--quiet"), cwd=td, capture_output=True, text=True)
     if r.returncode != 0:
         sys.exit("stem render failed: " + r.stderr[-500:])
     shutil.rmtree(td, ignore_errors=True)

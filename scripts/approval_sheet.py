@@ -33,6 +33,7 @@ import sys
 import tempfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+from plat import npx, venv_python, open_path  # noqa: E402
 from reelproj import (beats_timeline, caption_at, caption_groups, fmt_t, load_project,  # noqa: E402
                       parse_build_log, predicted_silences, run_build, sh, take_words, taste_mjs)
 
@@ -106,7 +107,7 @@ def capture_snapshot(pr, times, tmp, jobs=3):
         d = os.path.join(tmp, f"j{j}")
         os.makedirs(d)
         at = ",".join(f"{times[i]:.3f}" for i in idx)
-        procs.append((idx, d, subprocess.Popen(["npx", "hyperframes", "snapshot", pr.path, "--at", at, "-o", d, "--describe", "false", "--no-end"],
+        procs.append((idx, d, subprocess.Popen(npx("hyperframes", "snapshot", pr.path, "--at", at, "-o", d, "--describe", "false", "--no-end"),
                                                cwd=pr.path, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)))
     out = [None] * len(times)
     for idx, d, p in procs:
@@ -117,7 +118,7 @@ def capture_snapshot(pr, times, tmp, jobs=3):
             shutil.rmtree(d)
             os.makedirs(d)
             at = ",".join(f"{times[i]:.3f}" for i in idx)
-            r = sh(["npx", "hyperframes", "snapshot", pr.path, "--at", at, "-o", d, "--describe", "false", "--no-end", "--timeout", "20000"], cwd=pr.path, timeout=1800)
+            r = sh(npx("hyperframes", "snapshot", pr.path, "--at", at, "-o", d, "--describe", "false", "--no-end", "--timeout", "20000"), cwd=pr.path, timeout=1800)
             files = sorted(f for f in os.listdir(d) if re.match(r"frame-\d+-at-.*\.png$", f))
             if len(files) != len(idx):
                 raise RuntimeError(f"snapshot returned {len(files)} of {len(idx)} frames; try --jobs 1 or --frames video:<render>\n{(r.stdout + r.stderr)[-600:]}")
@@ -155,7 +156,7 @@ def make_cover(pr, tmp):
     cv = {"headline": cv} if isinstance(cv, str) else cv
     if not cv.get("headline"):
         return [], "cover: needs a headline (words the speaker says; 'A|B|*C*', *line* = accent box)"
-    py = os.path.join(os.environ.get("MATTE_VENV") or os.path.expanduser("~/.venvs/ghost-matte"), "bin", "python")
+    py = venv_python(os.environ.get("MATTE_VENV") or "~/.venvs/ghost-matte")
     if not os.path.exists(py):
         return [], f"cover: the matte venv is missing (bash {os.path.join(pr.skill, 'scripts', 'setup_matte.sh')}); no cover made"
     look = pr.spec.get("look") or {}
@@ -190,7 +191,7 @@ def make_cover(pr, tmp):
 
 # ---------------------------------------------------------------- checks
 def lint(pr):
-    r = sh(["npx", "hyperframes", "lint", "--json"], cwd=pr.path, timeout=300)
+    r = sh(npx("hyperframes", "lint", "--json"), cwd=pr.path, timeout=300)
     try:
         j = json.loads(r.stdout[r.stdout.index("{"):])
     except (ValueError, json.JSONDecodeError):
@@ -634,7 +635,7 @@ def main():
             pngs = capture_snapshot(pr, times, tmp, a.jobs)
         elif a.frames == "draft":
             draft = os.path.join(proj, "build", "draft.mp4")
-            r = sh(["npx", "hyperframes", "render", "-q", "draft", "-o", draft, "--quiet"], cwd=proj, timeout=7200)
+            r = sh(npx("hyperframes", "render", "-q", "draft", "-o", draft, "--quiet"), cwd=proj, timeout=7200)
             if r.returncode != 0:
                 sys.exit("draft render failed: " + (r.stderr or r.stdout)[-600:])
             pngs = capture_video(draft, times, tmp)
@@ -663,7 +664,7 @@ def main():
     print(f"{len(frames)} frames in {took:.0f} s; {n_err} errors, {n_warn} warnings")
     print(f"-> {out}  ({os.path.getsize(out) / 1e6:.1f} MB)")
     if a.open:
-        subprocess.run(["open", out])
+        open_path(out)
 
 
 if __name__ == "__main__":

@@ -145,7 +145,7 @@ def main():
     if p is not None:
         lut = tempfile.NamedTemporaryFile(suffix=".cube", delete=False).name
         G.write_cube(lut, p, transfer)
-        vf += [f"scale={W}:{H}:flags=lanczos+{G.SCALE_FLAGS}{matrix}", "format=rgb48le", f"lut3d=file={lut}:interp=tetrahedral",
+        vf += [f"scale={W}:{H}:flags=lanczos+{G.SCALE_FLAGS}{matrix}", "format=rgb48le", f"lut3d=file='{G.filter_path(lut)}':interp=tetrahedral",
                f"scale=out_color_matrix=bt709:out_range=tv:flags={G.SCALE_FLAGS}"]
     else:
         vf += [f"scale={W}:{H}:flags=lanczos+{G.SCALE_FLAGS}:out_range=tv"]

@@ -20,7 +20,7 @@ Checks (profile talking-head unless noted; broll-led = Seoul list / POV montage;
                  the reel's median insert saturation x0.8-1.2 (grade_lib.py)
   graphics       full-screen graphic scenes: median length <= 2.5 s; scenes of 1 s or more have >= 50 % of their
                  frames moving (a 0.5 s word flash is a beat, not a slide)
-  captions       spoken-word text on screen (OCR: macOS Vision via scripts/ocr_text.js), per caption event: >= 48 px and
+  captions       spoken-word text on screen (OCR: macOS Vision via scripts/ocr_text.js, or tesseract rus+eng elsewhere), per caption event: >= 48 px and
                  >= 3:1 contrast between the letters and the pixels right around them (an outline or shadow counts)
   language       Latin words in a Cyrillic reel (decor text), the speaker's clothing excluded           (warning)
   faces          no card, panel or blur over a face, in the plate or in any insert
@@ -512,17 +512,69 @@ def context_visible(ren_g, src_g, A, box):
 
 # ------------------------------------------------------------------ OCR
 def ocr(paths):
-    if sys.platform != "darwin" or not shutil.which("osascript"):
+    """On-screen text per frame: {img: {"w", "h", "lines": [{"text", "conf" (0..1), "box": [x, y, w, h]}]}}.
+    macOS Vision (ocr_text.js) where it exists, otherwise tesseract (rus+eng; TESSDATA_PREFIX or --tessdata-dir
+    honoured through $GHOST_TESSDATA). None when neither is available."""
+    if sys.platform == "darwin" and shutil.which("osascript"):
+        out = {}
+        for i in range(0, len(paths), 40):
+            r = subprocess.run(["osascript", "-l", "JavaScript", os.path.join(HERE, "ocr_text.js")] + paths[i:i + 40], capture_output=True, text=True)
+            for line in r.stdout.splitlines():
+                try:
+                    j = json.loads(line)
+                    out[j["img"]] = j
+                except (json.JSONDecodeError, KeyError):
+                    pass
+        return out
+    return ocr_tesseract(paths)
+
+
+def tesseract_bin():
+    t = shutil.which("tesseract")
+    if t:
+        return t
+    for p in ("C:/Program Files/Tesseract-OCR/tesseract.exe", "C:/Program Files (x86)/Tesseract-OCR/tesseract.exe",
+              os.path.expanduser("~/AppData/Local/Programs/Tesseract-OCR/tesseract.exe")):
+        if os.path.exists(p):
+            return p
+    return None
+
+
+def ocr_tesseract(paths):
+    t = tesseract_bin()
+    if not t:
         return None
+    base = [t]
+    td = os.environ.get("GHOST_TESSDATA")
+    if td:
+        base += ["--tessdata-dir", td]
+    langs = subprocess.run(base + ["--list-langs"], capture_output=True, text=True)
+    have = set((langs.stdout + langs.stderr).split()[-20:])
+    lang = "+".join(l for l in ("rus", "eng") if l in have) or "eng"
     out = {}
-    for i in range(0, len(paths), 40):
-        r = subprocess.run(["osascript", "-l", "JavaScript", os.path.join(HERE, "ocr_text.js")] + paths[i:i + 40], capture_output=True, text=True)
-        for line in r.stdout.splitlines():
-            try:
-                j = json.loads(line)
-                out[j["img"]] = j
-            except (json.JSONDecodeError, KeyError):
-                pass
+    for p in paths:
+        r = subprocess.run(base + [p, "-", "-l", lang, "--psm", "11", "-c", "tessedit_create_tsv=1", "-c", "tessedit_create_txt=0"],
+                           capture_output=True, text=True, encoding="utf-8", errors="replace")
+        w = h = 0
+        lines = {}
+        for row in r.stdout.splitlines()[1:]:
+            f = row.split("\t")
+            if len(f) < 12:
+                continue
+            lvl, left, top, width, height, conf, text = int(f[0]), int(f[6]), int(f[7]), int(f[8]), int(f[9]), float(f[10]), f[11]
+            if lvl == 1:
+                w, h = width, height
+            if lvl != 5 or conf < 0 or not text.strip():
+                continue
+            key = (f[2], f[3], f[4])
+            L = lines.setdefault(key, {"words": [], "conf": [], "x0": 1e9, "y0": 1e9, "x1": 0, "y1": 0})
+            L["words"].append(text)
+            L["conf"].append(conf / 100.0)
+            L["x0"], L["y0"] = min(L["x0"], left), min(L["y0"], top)
+            L["x1"], L["y1"] = max(L["x1"], left + width), max(L["y1"], top + height)
+        out[p] = {"img": p, "w": w, "h": h, "lines": [
+            {"text": " ".join(L["words"]), "conf": sum(L["conf"]) / len(L["conf"]),
+             "box": [L["x0"], L["y0"], L["x1"] - L["x0"], L["y1"] - L["y0"]]} for L in lines.values()]}
     return out
 
 
@@ -859,7 +911,7 @@ def analyse(video, project=None, profile="talking-head", words=None, allow_hold=
         log(f"  OCR on {len(imgs)} frames...")
         res = ocr(imgs)
         if res is None:
-            ocr_note = "OCR unavailable (needs macOS osascript): captions not checked"
+            ocr_note = "OCR unavailable (needs macOS Vision or tesseract on PATH): captions not checked"
         else:
             spoken = [(w["s"], w["e"], norm(w["w"])) for w in (words or []) if norm(w["w"])]
             cyr = sum(bool(re.search("[а-яё]", w[2])) for w in spoken) > 0.5 * max(1, len(spoken))

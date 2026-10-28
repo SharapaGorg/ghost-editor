@@ -33,14 +33,17 @@ def transcribe(src, model, lang):
         wav = os.path.join(td, "audio.wav")
         subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", src, "-vn", "-ac", "1", "-ar", "16000", wav], check=True)
         cmd = [find_whisper(), wav, "--model", model, "--word_timestamps", "True",
-               "--output_format", "json", "--output_dir", td, "--fp16", "False"]
+               "--output_format", "json", "--output_dir", td, "--fp16", "False", "--verbose", "False"]
         if lang:
             cmd += ["--language", lang]
-        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
+        # whisper prints the transcript; a Windows console (cp1252) can't encode most languages -> PYTHONUTF8
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, env={**os.environ, "PYTHONUTF8": "1"})
         return json.load(open(os.path.join(td, "audio.json")))
 
 
 def main():
+    if sys.platform == "win32":
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # the take table is in the speaker's language
     ap = argparse.ArgumentParser()
     ap.add_argument("src")
     ap.add_argument("--out", required=True)

@@ -42,7 +42,8 @@ from broll_qa import Faces, decode, cover_size  # noqa: E402
 ME = os.path.join(HERE, "..", "library", "me")
 REF = os.path.join(ME, "face_ref.npz")
 INDEX = os.path.join(ME, "footage_index.json")
-ROOTS = [os.path.expanduser(p) for p in ("~/Pictures/Photos Library.photoslibrary/originals", "~/Movies")]
+ROOTS = [os.path.expanduser(p) for p in ("~/Pictures/Photos Library.photoslibrary/originals", "~/Movies",
+                                         "~/Videos", "~/Pictures")]  # macOS Photos + Movies; Windows / Linux Videos + Pictures
 VIDEO = re.compile(r"\.(mov|mp4|m4v)$", re.I)
 SKIP = re.compile(r"(/\.|/Telegram|/CapCut/|/renders?/|/proxies|/\.Trash)", re.I)
 TH, MINW, TINY = 0.40, 0.04, 0.04

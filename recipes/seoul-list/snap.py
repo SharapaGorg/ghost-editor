@@ -22,12 +22,16 @@ import tempfile
 
 from PIL import Image, ImageDraw, ImageFont
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "scripts", "lib"))
+from plat import npx  # noqa: E402
+
 HF = os.environ.get("HF_VERSION", "0.8.150")
 
 
 def font(size):
     for f in ("/System/Library/Fonts/Supplemental/Arial Bold.ttf", "/System/Library/Fonts/Supplemental/Arial.ttf",
-              "/Library/Fonts/Arial.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"):
+              "/Library/Fonts/Arial.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+              "C:/Windows/Fonts/arialbd.ttf", "C:/Windows/Fonts/arial.ttf"):
         if os.path.exists(f):
             return ImageFont.truetype(f, size)
     return ImageFont.load_default()
@@ -75,7 +79,7 @@ def load(P, ids):
 def snapshot(P, times, out):
     os.makedirs(out, exist_ok=True)
     at = ",".join(f"{t:.3f}" for t in times)
-    r = subprocess.run(["npx", "-y", f"hyperframes@{HF}", "snapshot", "--at", at, "--no-end", "--describe", "false", "-o", out],
+    r = subprocess.run(npx("-y", f"hyperframes@{HF}", "snapshot", "--at", at, "--no-end", "--describe", "false", "-o", out),
                        cwd=P, capture_output=True, text=True)
     if r.returncode:
         sys.exit("snapshot failed: " + (r.stderr or r.stdout)[-800:])

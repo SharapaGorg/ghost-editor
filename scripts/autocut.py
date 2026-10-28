@@ -18,6 +18,7 @@ import argparse
 import json
 import re
 import subprocess
+import sys
 
 
 def main():
@@ -32,7 +33,9 @@ def main():
     a = ap.parse_args()
     if a.vad:
         here = os.path.dirname(os.path.abspath(__file__))
-        py = os.path.join(os.environ.get("AUDIOQA_VENV", os.path.expanduser("~/.venvs/ghost-audioqa")), "bin", "python")
+        sys.path.insert(0, os.path.join(here, "lib"))
+        from plat import venv_python
+        py = venv_python(os.environ.get("AUDIOQA_VENV", "~/.venvs/ghost-audioqa"))
         if not os.path.exists(py):
             raise SystemExit(f"--vad needs the audio QA venv: bash {os.path.join(here, 'setup_audioqa.sh')}")
         cmd = [py, os.path.join(here, "vad_pauses.py"), a.src, "--min-pause", str(a.min), "--lead", str(a.keep), "--tail", str(a.keep)]

@@ -22,7 +22,10 @@ try:
 except ImportError:  # pragma: no cover
     Image = ImageDraw = None
 
-HF = ["npx", "hyperframes"]
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+from plat import npx  # noqa: E402
+
+HF = npx("hyperframes")
 
 
 def snapshot(proj, times, out):
