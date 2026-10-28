@@ -71,7 +71,7 @@ def grid(ims, cols, bg=(24, 24, 24)):
 
 
 def load(P, ids):
-    b = json.load(open(os.path.join(P, "build", "beats.json")))
+    b = json.load(open(os.path.join(P, "build", "beats.json"), encoding="utf-8"))
     beats = [x for x in b["beats"] if not ids or x["id"] in ids]
     return b, beats
 
@@ -80,7 +80,7 @@ def snapshot(P, times, out):
     os.makedirs(out, exist_ok=True)
     at = ",".join(f"{t:.3f}" for t in times)
     r = subprocess.run(npx("-y", f"hyperframes@{HF}", "snapshot", "--at", at, "--no-end", "--describe", "false", "-o", out),
-                       cwd=P, capture_output=True, text=True)
+                       cwd=P, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if r.returncode:
         sys.exit("snapshot failed: " + (r.stderr or r.stdout)[-800:])
     files = sorted(f for f in os.listdir(out) if f.startswith("frame-") and f.endswith(".png"))
@@ -181,9 +181,9 @@ def cmd_compare(a):
 def cmd_cuts(a):
     import numpy as np
     P = os.path.abspath(a.project)
-    b = json.load(open(os.path.join(P, "build", "beats.json")))
+    b = json.load(open(os.path.join(P, "build", "beats.json"), encoding="utf-8"))
     fps = b["fps"]
-    spec = json.load(open(os.path.join(P, "list.json")))
+    spec = json.load(open(os.path.join(P, "list.json"), encoding="utf-8"))
     clips = spec.get("clips", "clips")
     rd = lambda f, t: np.frombuffer(subprocess.run(["ffmpeg", "-v", "error", "-ss", f"{t:.6f}", "-i", f, "-frames:v", "1", "-vf", "scale=270:480",
                                                     "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], capture_output=True).stdout, np.uint8).astype(float)

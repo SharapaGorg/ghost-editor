@@ -222,7 +222,7 @@ def write_cube(path, p, transfer=None, n=None):
     b, gg, r = np.meshgrid(g, g, g, indexing="ij")          # .cube order: R fastest, then G, then B
     rgb = np.stack([r, gg, b], -1).reshape(-1, 3)
     out = transform(rgb, p, transfer)
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         f.write(f"TITLE \"ghost-editor conform\"\nLUT_3D_SIZE {n}\nDOMAIN_MIN 0 0 0\nDOMAIN_MAX 1 1 1\n")
         np.savetxt(f, out, fmt="%.6f")
     return path
@@ -233,7 +233,7 @@ def probe(path):
     j = json.loads(subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
                                    "stream=width,height,r_frame_rate,avg_frame_rate,color_transfer,color_primaries,color_space,pix_fmt,codec_name"
                                    ":stream_side_data=rotation:format=duration", "-of", "json", path],
-                                  capture_output=True, text=True, check=True).stdout)
+                                  capture_output=True, text=True, encoding="utf-8", errors="replace", check=True).stdout)
     s = j["streams"][0]
     n, d = s.get("avg_frame_rate", "0/1").split("/")
     fps = float(n) / float(d) if float(d) and float(n) else 0.0
@@ -305,7 +305,7 @@ def plate_stats(path, n=12, cache=True):
     side = path + ".gradestats.json"
     key = f"{os.path.getsize(path)}:{os.path.getmtime(path):.0f}"
     if cache and os.path.exists(side):
-        j = json.load(open(side))
+        j = json.load(open(side, encoding="utf-8"))
         if j.get("key") == key:
             return j["stats"]
     info = probe(path)
@@ -315,7 +315,7 @@ def plate_stats(path, n=12, cache=True):
     st = median_stats([frame_stats(_bgr8(hdr_to_sdr(f, tr) if tr else f)) for f in fr])
     if cache:
         try:
-            json.dump({"key": key, "stats": st}, open(side, "w"))
+            json.dump({"key": key, "stats": st}, open(side, "w", encoding="utf-8"))
         except OSError:
             pass
     return st

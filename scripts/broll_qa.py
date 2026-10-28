@@ -329,7 +329,7 @@ def sidecar_of(path):
     for c in cands:
         if os.path.exists(c):
             try:
-                return json.load(open(c))
+                return json.load(open(c, encoding="utf-8"))
             except (OSError, json.JSONDecodeError):
                 pass
     return {}
@@ -346,7 +346,7 @@ def provenance(path):
     for side in (path + ".json", real + ".json") + ((hard,) if hard else ()):
         if os.path.exists(side):
             try:
-                j = json.load(open(side))
+                j = json.load(open(side, encoding="utf-8"))
                 return {"kind": j.get("kind") or G.guess_kind(j.get("src", path)), "src": j.get("src", path),
                         "in": j.get("in", 0.0), "span": j.get("source_span")}
             except (json.JSONDecodeError, OSError):
@@ -518,7 +518,7 @@ def ocr(paths):
     if sys.platform == "darwin" and shutil.which("osascript"):
         out = {}
         for i in range(0, len(paths), 40):
-            r = subprocess.run(["osascript", "-l", "JavaScript", os.path.join(HERE, "ocr_text.js")] + paths[i:i + 40], capture_output=True, text=True)
+            r = subprocess.run(["osascript", "-l", "JavaScript", os.path.join(HERE, "ocr_text.js")] + paths[i:i + 40], capture_output=True, text=True, encoding="utf-8", errors="replace")
             for line in r.stdout.splitlines():
                 try:
                     j = json.loads(line)
@@ -548,7 +548,7 @@ def ocr_tesseract(paths):
     td = os.environ.get("GHOST_TESSDATA")
     if td:
         base += ["--tessdata-dir", td]
-    langs = subprocess.run(base + ["--list-langs"], capture_output=True, text=True)
+    langs = subprocess.run(base + ["--list-langs"], capture_output=True, text=True, encoding="utf-8", errors="replace")
     have = set((langs.stdout + langs.stderr).split()[-20:])
     lang = "+".join(l for l in ("rus", "eng") if l in have) or "eng"
     out = {}
@@ -893,7 +893,7 @@ def analyse(video, project=None, profile="talking-head", words=None, allow_hold=
                 src_issues.append(f"{l['id']}: plays {over:.2f} s past the end of {l['rel']} (a held last frame)")
             if l["kind"] == "insert":
                 r = subprocess.run(["ffmpeg", "-hide_banner", "-ss", f"{l['ms']:.3f}", "-t", f"{max(0.05, min(l['dur'], li['dur'] - l['ms'])):.3f}", "-i", l["src"],
-                                    "-an", "-vf", f"scale=270:-2,freezedetect=n=-60dB:d={FREEZE_MAX}", "-f", "null", "-"], capture_output=True, text=True)
+                                    "-an", "-vf", f"scale=270:-2,freezedetect=n=-60dB:d={FREEZE_MAX}", "-f", "null", "-"], capture_output=True, text=True, encoding="utf-8", errors="replace")
                 win = max(0.05, min(l["dur"], li["dur"] - l["ms"]))
                 starts = [float(x) for x in re.findall(r"freeze_start: ([\d.]+)", r.stderr)]
                 durs = [float(x) for x in re.findall(r"freeze_duration: ([\d.]+)", r.stderr)]
@@ -1209,7 +1209,7 @@ def analyse(video, project=None, profile="talking-head", words=None, allow_hold=
                              "Conform every clip to the speaker's as-shot footage (insert_prep.py --ref); drop shots from another light." if bad_w else None))
             # pace: median shot vs the reference
             r = subprocess.run(["ffmpeg", "-hide_banner", "-i", video, "-an", "-vf", "scale=270:-2,scdet=threshold=10:sc_pass=0", "-f", "null", "-"],
-                               capture_output=True, text=True)
+                               capture_output=True, text=True, encoding="utf-8", errors="replace")
             cuts = sorted(float(x) for x in re.findall(r"lavfi\.scd\.time:\s*([\d.]+)", r.stderr))
             bnd = [0.0] + [c for c in cuts if 0.05 < c < dur - 0.05] + [dur]
             shots = [bnd[i + 1] - bnd[i] for i in range(len(bnd) - 1)]
@@ -1291,7 +1291,7 @@ def analyse(video, project=None, profile="talking-head", words=None, allow_hold=
             if l["kind"] in ("sticker", "backdrop") or l["still"]:
                 continue
             r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-skip_frame", "nokey", "-show_entries", "frame=pts_time",
-                                "-of", "csv=p=0", l["src"]], capture_output=True, text=True)
+                                "-of", "csv=p=0", l["src"]], capture_output=True, text=True, encoding="utf-8", errors="replace")
             kt = sorted(float(x.strip(",")) for x in r.stdout.split() if x.strip(","))
             gap = max(np.diff(kt + [l["info"]["dur"]])) if kt else l["info"]["dur"]
             if l["kind"] == "plate":
@@ -1351,7 +1351,7 @@ def load_words(path, project):
     cands = [path] if path else ([os.path.join(project, "build", n) for n in ("words.cut.json", "words.json", "words.smooth.json")] if project else [])
     for p in cands:
         if p and os.path.exists(p):
-            j = json.load(open(p))
+            j = json.load(open(p, encoding="utf-8"))
             if isinstance(j, dict) and "segments" in j:
                 return [{"w": w.get("word", w.get("text", "")).strip(), "s": w["start"], "e": w["end"]} for s in j["segments"] for w in s.get("words", [])]
             if isinstance(j, dict) and "words" in j:
@@ -1380,7 +1380,7 @@ def main():
     res = analyse(a.video, a.project, a.profile, words, holds, not a.no_ocr, not a.no_match, a.speaker_ref, style=a.style, use_vision=not a.no_vision)
     out = a.out or (os.path.join(a.project, "build", "broll-qa.json") if a.project else os.path.splitext(a.video)[0] + ".broll-qa.json")
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
-    json.dump(res, open(out, "w"), ensure_ascii=False, indent=1, default=lambda o: o.tolist() if hasattr(o, "tolist") else str(o))
+    json.dump(res, open(out, "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=lambda o: o.tolist() if hasattr(o, "tolist") else str(o))
     timeline_png(res, os.path.splitext(out)[0] + "-timeline.png")
     fails = [c for c in res["checks"] if c["status"] == "fail"]
     for c in res["checks"]:

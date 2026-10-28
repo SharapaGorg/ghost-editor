@@ -143,7 +143,7 @@ def styles_row(name, preset, sig, best_for):
 
 
 def add_row(md_path, row, name):
-    lines = open(md_path).read().split("\n")
+    lines = open(md_path, encoding="utf-8").read().split("\n")
     if any(l.startswith(f"| `{name}` |") for l in lines):
         lines = [row if l.startswith(f"| `{name}` |") else l for l in lines]
     else:
@@ -155,7 +155,7 @@ def add_row(md_path, row, name):
         while last + 1 < len(lines) and lines[last + 1].startswith("| `"):
             last += 1
         lines.insert(last + 1, row)
-    open(md_path, "w").write("\n".join(lines))
+    open(md_path, "w", encoding="utf-8").write("\n".join(lines))
 
 
 def copy_project(src, dst, reel):
@@ -164,7 +164,7 @@ def copy_project(src, dst, reel):
         shutil.rmtree(dst)
     os.makedirs(os.path.join(dst, "assets"))
     os.makedirs(os.path.join(dst, "build"))
-    json.dump(reel, open(os.path.join(dst, "reel.json"), "w"), indent=1, ensure_ascii=False)
+    json.dump(reel, open(os.path.join(dst, "reel.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
     for f in os.listdir(os.path.join(src, "assets")):
         p = os.path.join(src, "assets", f)
         if f in ("fonts", "sfx", "memes", "icons", "music") or f.startswith(("hold-", "outro")):
@@ -240,13 +240,13 @@ def main():
     rp = os.path.join(pr.path, "build", "render-report.json")
     if not os.path.exists(os.path.join(pr.path, "build", "reel.mp4")) and not a.force:
         sys.exit("no build/reel.mp4: save a style from a reel that rendered and worked (or --force)")
-    if os.path.exists(rp) and json.load(open(rp)).get("summary", {}).get("status") == "fail" and not a.force:
+    if os.path.exists(rp) and json.load(open(rp, encoding="utf-8")).get("summary", {}).get("status") == "fail" and not a.force:
         sys.exit("the last render report failed; fix the reel first (or --force)")
     # the reel's own preset is the closest one; a reel with no style ran on build.mjs defaults, so it
     # starts from nothing (a base it never used would leak keys such as sfxProfile into the look)
     base_name = a.base or pr.raw.get("style")
     bp = os.path.join(skill, "styles", f"{base_name}.json") if base_name else ""
-    base = json.load(open(bp)) if bp and os.path.exists(bp) else {}
+    base = json.load(open(bp, encoding="utf-8")) if bp and os.path.exists(bp) else {}
     base["_name"] = base_name
     proj_rel = pr.path.replace(os.path.expanduser("~"), "~")
     preset, sig = derive_preset(pr, base, name, a.about, proj_rel)
@@ -263,20 +263,20 @@ def main():
         return
 
     os.makedirs(os.path.dirname(target), exist_ok=True)
-    json.dump(preset, open(target, "w"), indent=1, ensure_ascii=False)
+    json.dump(preset, open(target, "w", encoding="utf-8"), indent=1, ensure_ascii=False)
     ex_path = os.path.join(out_skill, "examples", "gallery", f"{name}.reel.json")
     os.makedirs(os.path.dirname(ex_path), exist_ok=True)
-    json.dump(example, open(ex_path, "w"), indent=1, ensure_ascii=False)
+    json.dump(example, open(ex_path, "w", encoding="utf-8"), indent=1, ensure_ascii=False)
     md = os.path.join(out_skill, "references", "styles.md")
     if os.path.exists(md):
         add_row(md, row, name)
     if bed:
         mp = os.path.join(out_skill, "library", "music", "manifest.json")
-        man = json.load(open(mp))
+        man = json.load(open(mp, encoding="utf-8"))
         st = man[bed].setdefault("styles", [])
         if name not in st:
             st.append(name)
-        json.dump(man, open(mp, "w"), indent=1, ensure_ascii=False)
+        json.dump(man, open(mp, "w", encoding="utf-8"), indent=1, ensure_ascii=False)
         print(f"tagged music '{bed}' with style '{name}' in {mp}")
     print(f"\n-> {target}\n-> {ex_path}\n-> {md} (row added)")
 
@@ -287,12 +287,12 @@ def main():
     rt = copy_project(pr.path, os.path.join(vdir, f"{name}-roundtrip"), example)
     c1, l1 = build(out_skill, orig)
     c2, l2 = build(out_skill, rt)
-    same_html = c1 == 0 and c2 == 0 and normalise(open(os.path.join(orig, "index.html")).read()) == normalise(open(os.path.join(rt, "index.html")).read())
-    e1 = json.load(open(os.path.join(orig, "build", "sfx_events.json")))["events"] if c1 == 0 else None
-    e2 = json.load(open(os.path.join(rt, "build", "sfx_events.json")))["events"] if c2 == 0 else None
+    same_html = c1 == 0 and c2 == 0 and normalise(open(os.path.join(orig, "index.html"), encoding="utf-8").read()) == normalise(open(os.path.join(rt, "index.html"), encoding="utf-8").read())
+    e1 = json.load(open(os.path.join(orig, "build", "sfx_events.json"), encoding="utf-8"))["events"] if c1 == 0 else None
+    e2 = json.load(open(os.path.join(rt, "build", "sfx_events.json"), encoding="utf-8"))["events"] if c2 == 0 else None
     same_sfx = e1 == e2 and e1 is not None
     if bed:  # music auto picks the first bed tagged with the style; equal when the tag is the only one
-        same_html = same_html or (c2 == 0 and "music-bed" in open(os.path.join(rt, "index.html")).read())
+        same_html = same_html or (c2 == 0 and "music-bed" in open(os.path.join(rt, "index.html"), encoding="utf-8").read())
     print(f"round trip (example + preset vs the original reel.json): index.html {'identical' if same_html else 'DIFFERENT'}, "
           f"SFX events {'identical' if same_sfx else 'DIFFERENT'}")
     if not (same_html and same_sfx):
